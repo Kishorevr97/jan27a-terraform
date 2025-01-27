@@ -41,15 +41,17 @@ jobs:
     - name: Select Workspace
       run: terraform workspace select ${{ github.event.pull_request.base.ref || 'default' }} || terraform workspace new ${{ github.event.pull_request.base.ref || 'default' }}
 
-    - name: Generate Terraform Plan (PR Only)
-      if: github.event_name == 'pull_request'
+    - name: Generate Terraform Plan
       run: terraform plan -out=tfplan
 
-    - name: Generate Terraform Docs for PR Review
+    - name: Install Terraform Docs
       if: github.event_name == 'pull_request'
-      run: |
-        terraform-docs markdown table . > README.md
-        git diff --exit-code || exit 1
+      uses: terraform-docs/gh-actions@v1.3.0
+      with:
+          working-dir: .
+          output-file: README.md
+          output-method: inject
+          git-push: "true"
 
     - name: Terraform Apply (Main Branch)
       if: github.ref == 'refs/heads/main'
