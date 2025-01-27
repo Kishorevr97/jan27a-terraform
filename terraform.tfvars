@@ -6,5 +6,5 @@ db_instance_class = "db.t4g.micro"
 db_allocated_storage = 20
 db_name = "terrajan27"
 db_username = "kish"
-db_password = "kish@123"
+db_password = "kish123"
 s3_bucket_name = "my-kishore-content"
