@@ -31,6 +31,12 @@ jobs:
       with:
           token: ${{ secrets.TOKEN }}
           ref: main
+          
+    - name: Configure Git
+      run: |
+        git config --global user.name 'kishorevr97'
+        git config --global user.email 'kishorevr97@gmail.com'
+    
 
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v2
