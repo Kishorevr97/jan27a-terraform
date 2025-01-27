@@ -28,6 +28,9 @@ jobs:
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v3
+      with:
+          token: ${{ secrets.TOKEN }}
+          ref: main
 
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v2
