@@ -39,7 +39,7 @@ jobs:
       run: terraform init
 
     - name: Select Workspace
-      run: terraform workspace select ${{ github.event.pull_request.base.ref || 'default' }} || terraform workspace new ${{ github.event.pull_request.base.ref || 'default' }}
+      run: terraform workspace select ${{ github.event.inputs.environment || 'dev' }} || terraform workspace new ${{ github.event.inputs.environment || 'dev' }}
 
     - name: Generate Terraform Plan
       run: terraform plan -out=tfplan
