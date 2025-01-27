@@ -1,13 +1,19 @@
 name: Terraform AWS Setup
 
 on:
-  # workflow_dispatch:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+  workflow_dispatch:
+    inputs:
+        environment:
+          description: "deploy environments"
+          required: true
+          default: dev
+          
+  # push:
+  #   branches:
+  #     - main
+  # pull_request:
+  #   branches:
+  #     - main
 
 jobs:
   terraform:
