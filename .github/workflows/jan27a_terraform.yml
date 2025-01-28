@@ -56,7 +56,7 @@ jobs:
       run: terraform workspace select ${{ github.event.inputs.environment || 'dev' }} || terraform workspace new ${{ github.event.inputs.environment || 'dev' }}
 
     - name: Generate Terraform Plan
-      run: terraform plan -out=tfplan
+      run: terraform plan '-var-file=${{ github.event.inputs.environment }}.tfvars' -out=tfplan
 
     # - name: install lfs
     #   run: |
@@ -75,6 +75,6 @@ jobs:
           output-method: inject
           git-push: "true"
 
-    - name: Terraform Apply (Main Branch)
+    - name: Terraform Apply 
       if: github.event_name == 'push' && github.ref == 'refs/heads/main'
       run: terraform apply '-var-file=${{ github.event.inputs.environment }}.tfvars' -auto-approve
