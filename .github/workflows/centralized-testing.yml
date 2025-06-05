@@ -46,10 +46,10 @@ jobs:
         run: tflint --version
 
       - name: List Terraform files
-        run: ls -la ./terraform-modules/aws-services/datazone
+        run: ls -la .
 
       - name: Run TFLint
-        working-directory: ./terraform-modules/aws-services/datazone
+        working-directory: .
         run: tflint
         continue-on-error: true
 
@@ -64,7 +64,7 @@ jobs:
       - name: Run Checkov
         uses: bridgecrewio/checkov-action@master
         with:
-          directory: ./terraform-modules/aws-services
+          directory: .
           framework: terraform
           soft_fail: true
           output_format: cli,sarif
@@ -85,19 +85,19 @@ jobs:
       - name: Run tfsec scan
         uses: aquasecurity/tfsec-action@v1.0.3
         with:
-          working_directory: ./terraform-modules/aws-services
+          working_directory: .
           soft_fail: true
 
       - name: Terraform Init
-        working-directory: ./terraform-modules/aws-services/event_bus
+        working-directory: .
         run: terraform init
 
       - name: Terraform Plan
-        working-directory: ./terraform-modules/aws-services/event_bus
+        working-directory: .
         run: terraform plan -out=plan.binary
 
       - name: Export plan to JSON
-        working-directory: ./terraform-modules/aws-services/event_bus
+        working-directory: .
         run: terraform show -json plan.binary > plan.json
 
       - name: Check for Unexpected Deletes
