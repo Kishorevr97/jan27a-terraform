@@ -1,0 +1,117 @@
+
+name: centralized testing terraform
+
+# on:
+#   push:
+#     branches:
+#       - centralized-testing-fw
+  workflow_dispatch:
+
+env:
+  AWS_REGION: eu-central-1
+  TERRAFORM_VERSION: v1.7.5
+  AWS_ROLE_TO_ASSUME: "arn:aws:iam::637423367725:role/ph-rnd-dse-cross-oidc-github-assume-role-devops-637423367725"
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  testing-security-scanning:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Git Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.6
+
+      - name: Assume AWS Account Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: latest
+
+      - name: Check TFLint version
+        run: tflint --version
+
+      - name: List Terraform files
+        run: ls -la ./terraform-modules/aws-services/datazone
+
+      - name: Run TFLint
+        working-directory: ./terraform-modules/aws-services/datazone
+        run: tflint
+        continue-on-error: true
+
+      # Step: Install Checkov
+      - name: Install Checkov
+        run: |
+          pip install checkov
+          checkov --version
+
+      # Step: Run Checkov Security Scan
+
+      - name: Run Checkov
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: ./terraform-modules/aws-services
+          framework: terraform
+          soft_fail: true
+          output_format: cli,sarif
+          output_file_path: console,results.sarif
+
+      # - name: Upload SARIF file
+      #   uses: github/codeql-action/upload-sarif@v2
+        
+      #   # Results are generated only on a success or failure
+      #   # this is required since GitHub by default won't run the next step
+      #   # when the previous one has failed. Security checks that do not pass will 'fail'.
+      #   # An alternative is to add `continue-on-error: true` to the previous step
+      #   # Or 'soft_fail: true' to checkov.
+      #   if: success() || failure()
+      #   with:
+      #     sarif_file: results.sarif
+
+      - name: Run tfsec scan
+        uses: aquasecurity/tfsec-action@v1.0.3
+        with:
+          working_directory: ./terraform-modules/aws-services
+          soft_fail: true
+
+      - name: Terraform Init
+        working-directory: ./terraform-modules/aws-services/event_bus
+        run: terraform init
+
+      - name: Terraform Plan
+        working-directory: ./terraform-modules/aws-services/event_bus
+        run: terraform plan -out=plan.binary
+
+      - name: Export plan to JSON
+        working-directory: ./terraform-modules/aws-services/event_bus
+        run: terraform show -json plan.binary > plan.json
+
+      - name: Check for Unexpected Deletes
+        run: |
+          deletes=$(jq '[.resource_changes[] | select(.change.actions | index("delete"))] | length' tfplan.json)
+          echo "Resources marked for deletion: $deletes"
+          if [ "$deletes" -gt 0 ]; then
+            echo "❌ Plan includes resource deletions. Failing."
+            exit 1
+          fi
+ 
+      - name: Check for Required Tags
+        run: |
+          missing_tags=$(grep -L '"tags"\s*=\s*{[^}]*Name\|Environment' *.tf | wc -l)
+          if [ "$missing_tags" -gt 0 ]; then
+            echo "❌ Required tags (Name, Environment) missing in some Terraform files."
+            exit 1
+          fi
