@@ -1,7 +1,7 @@
 
 name: centralized testing terraform
 
-# on:
+on:
 #   push:
 #     branches:
 #       - centralized-testing-fw
